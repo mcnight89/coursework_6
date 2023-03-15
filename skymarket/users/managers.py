@@ -1,8 +1,6 @@
 from importlib.resources import _
-from django.contrib.auth import models
-from django.contrib.auth.models import (
-    BaseUserManager
-)
+from django.contrib.auth.models import (BaseUserManager)
+from django.db import models
 
 
 # TODO здесь должен быть менеджер для модели Юзера.

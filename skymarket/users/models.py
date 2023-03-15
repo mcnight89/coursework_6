@@ -1,13 +1,11 @@
 from django.contrib.auth.models import AbstractBaseUser, AbstractUser
 from django.db import models
-from skymarket.users.managers import UserManager
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils.translation import gettext_lazy as _
 
 
-class UserRoles:
-    # TODO закончите enum-класс для пользователя
-    pass
+from users.managers import UserRoles, UserManager
+
 
 
 class User(AbstractBaseUser):
@@ -46,5 +44,3 @@ class User(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return self.is_superuser
-
-

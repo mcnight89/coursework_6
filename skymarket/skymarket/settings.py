@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
 
 from dotenv import load_dotenv
 
@@ -42,7 +43,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_filters",
     "rest_framework",
+    "djoser",
+    "drf_spectacular",
     "users",
     "ads",
     "redoc",
@@ -82,9 +86,20 @@ WSGI_APPLICATION = "skymarket.wsgi.application"
 
 # TODO здесь мы настраиваем аутентификацию и пагинацию
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 5,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 # TODO здесь мы настраиваем Djoser
 DJOSER = {
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserRegistrationSerializer',
+        'current_user': 'users.serializers.UserUpdateSerializer',
+        'user_update': 'users.serializers.UserUpdateSerializer',
+    }
 }
 
 # Database
@@ -92,6 +107,14 @@ DJOSER = {
 
 # TODO здесь необходимо настроить подключение к БД
 DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'skymarket',
+        'USER': 'skymarket',
+        'PASSWORD': 'skymarket',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 
@@ -153,3 +176,5 @@ EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = os.environ.get("EMAIL_PORT")
+
+AUTH_USER_MODEL = "User"

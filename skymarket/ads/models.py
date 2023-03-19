@@ -1,11 +1,11 @@
 from django.db import models
 
-from skymarket.users.models import User
+from users.models import User
 
 
 class Ad(models.Model):
     title = models.CharField(unique=True, max_length=200)
-    price = models.DecimalField(default=0)
+    price = models.PositiveIntegerField(default=0)
     description = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -14,15 +14,14 @@ class Ad(models.Model):
     class Meta:
         verbose_name = 'Объявление'
         verbose_name_plural = 'Объявления'
-        ordering = ['created_at']
 
     def __str__(self):
         return self.title
 
 
 class Comment(models.Model):
-    text = models.TextField()
-    author = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    text = models.TextField(blank=True, max_length=1000)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     ad = models.ForeignKey(Ad, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 

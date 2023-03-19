@@ -1,55 +1,70 @@
-from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import pagination, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-
-from ads.filters import AdTitleFilter
-from ads.models import Ad, Comment
-from ads.permissions import IsOwner
-from ads.serializers import AdSerializer, CommentSerializer, AdDetailSerializer
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 
-class AdPagination(pagination.PageNumberPagination):
-    page_size = 4
+from ads.models import Comment, Ad
+from ads.serializers import CommentListSerializer, CommentSerializer, CommentCreateSerializer, \
+    AdListSerializer, AdRetrieveSerializer, AdCreateSerializer
+
+from ads.permissions import UserPermissions
 
 
-# TODO view функции. Предлагаем Вам следующую структуру - но Вы всегда можете использовать свою
-class AdViewSet(viewsets.ModelViewSet):
+class AdViewSet(ModelViewSet):
     queryset = Ad.objects.all()
-    pagination_class = AdPagination
-    permission_classes = [IsAuthenticated]
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = AdTitleFilter
-    serializer_class = AdSerializer
+    serializer_class = AdListSerializer
 
-    def get_serializer_class(self):
-        if self.action in ["retrieve"]:
-            return AdDetailSerializer
-        else:
-            return AdSerializer
+    serializer_action_classes = {
+        'list': AdListSerializer,
+        'retrieve': AdRetrieveSerializer,
+        'create': AdCreateSerializer,
+        'update': AdCreateSerializer,
+    }
+    permission_classes = (UserPermissions,)
 
-    def get_permissions(self):
-        if self.action in ["update", "destroy"]:
-            self.permission_classes = [IsAuthenticated, IsAdminUser | IsOwner]
-        return super().get_permissions()
+    @action(detail=False, methods=['get'], url_path=r'me', serializer_class=AdListSerializer)
+    def user_ads(self, request, *args, **kwargs):
+        current_user = self.request.user
+        user_ads = Ad.objects.filter(author=current_user)
+        page = self.paginate_queryset(user_ads)
 
-    @action(detail=False)
-    def me(self, request, *args, **kwargs):
-        self.queryset = Ad.objects.filter(author=request.user)
-        return super().list(self, request, *args, **kwargs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-
-class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-
-    def get_queryset(self):
-        ad_id = self.kwargs["ad_pk"]
-        return Comment.objects.filter(ad_id=ad_id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
-        ad_id = self.kwargs.get["ad_pk"]
-        ad_instance = get_object_or_404(Ad, pk=ad_id)
-        user = self.request.user
-        serializer.save(author=user, ad=ad_instance)
+        serializer.save(author=self.request.user)
+
+    def get_serializer_class(self):
+        try:
+            return self.serializer_action_classes[self.action]
+        except (KeyError, AttributeError):
+            return super().get_serializer_class()
+
+
+class CommentViewSet(ModelViewSet):
+    serializer_class = CommentSerializer
+    serializer_action_classes = {
+        'list': CommentListSerializer,
+        'retrieve': CommentListSerializer,
+        'create': CommentCreateSerializer,
+        'update': CommentCreateSerializer,
+    }
+
+    permission_classes = (UserPermissions,)
+
+    def get_queryset(self):
+        return Comment.objects.filter(ad_id=self.kwargs['ad_id'])
+
+    def get_serializer_class(self):
+        try:
+            return self.serializer_action_classes[self.action]
+        except (KeyError, AttributeError):
+            return super().get_serializer_class()
+
+    def perform_create(self, serializer):
+        ad = Ad.objects.get(pk=self.kwargs['ad_id'])
+        serializer.save(author=self.request.user, ad=ad)

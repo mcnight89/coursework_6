@@ -1,7 +1,7 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
 
 from ads.models import Comment, Ad
 from ads.serializers import CommentListSerializer, CommentSerializer, CommentCreateSerializer, \
@@ -9,9 +9,13 @@ from ads.serializers import CommentListSerializer, CommentSerializer, CommentCre
 
 from ads.permissions import UserPermissions
 
+from ads.filters import AdTitleFilter
+
 
 class AdViewSet(ModelViewSet):
     queryset = Ad.objects.all()
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AdTitleFilter
     serializer_class = AdListSerializer
 
     serializer_action_classes = {

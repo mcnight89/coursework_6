@@ -78,7 +78,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend_django.wsgi.application'
+WSGI_APPLICATION = 'skymarket.wsgi.application'
 
 
 # Database
